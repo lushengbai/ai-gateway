@@ -1,0 +1,15 @@
+# Normalize line endings: Git stores LF, checks out native.
+* text=auto
+
+# Windows-specific files stay CRLF
+*.sln     text eol=crlf
+*.csproj  text eol=crlf
+*.cs      text eol=crlf
+*.xaml    text eol=crlf
+*.manifest text eol=crlf
+
+# Binary files (no line-ending conversion)
+*.png binary
+*.jpg binary
+*.ico binary
+*.pfx binary

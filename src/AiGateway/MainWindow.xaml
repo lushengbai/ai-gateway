@@ -1,0 +1,185 @@
+<Window x:Class="AiGateway.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:ui="clr-namespace:AiGateway.UI"
+        Title="AI API Gateway — Local Proxy (Reverse / Forward)"
+        Height="720" Width="1080"
+        MinHeight="520" MinWidth="820"
+        WindowStartupLocation="CenterScreen"
+        Background="#F5F6F8">
+
+    <Window.DataContext>
+        <ui:MainViewModel />
+    </Window.DataContext>
+
+    <Window.Resources>
+        <ui:BytesToHumanConverter x:Key="Bytes" />
+        <ui:StatusCodeToBrushConverter x:Key="StatusBrush" />
+        <ui:StatusCodeTextConverter x:Key="StatusText" />
+        <ui:ElapsedConverter x:Key="Elapsed" />
+        <ui:InverseBoolConverter x:Key="InverseBool" />
+
+        <Style TargetType="Button">
+            <Setter Property="Padding" Value="14,6" />
+            <Setter Property="Margin" Value="0,0,8,0" />
+            <Setter Property="MinWidth" Value="72" />
+        </Style>
+        <Style TargetType="Label">
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="Padding" Value="0,0,4,0" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+        </Style>
+    </Window.Resources>
+
+    <DockPanel>
+
+        <!-- Toolbar -->
+        <Border DockPanel.Dock="Top" Background="White" Padding="12,10"
+                BorderBrush="#E1E3E8" BorderThickness="0,0,0,1">
+            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                <Label Content="Mode" />
+                <ComboBox Width="140" VerticalAlignment="Center"
+                          ItemsSource="{Binding Modes}"
+                          SelectedItem="{Binding Mode}"
+                          IsEnabled="{Binding IsRunning, Converter={StaticResource InverseBool}}" />
+
+                <Label Content="Port" Margin="12,0,0,0" />
+                <TextBox Width="70" VerticalAlignment="Center" VerticalContentAlignment="Center"
+                         Text="{Binding Port, UpdateSourceTrigger=PropertyChanged}"
+                         IsEnabled="{Binding IsRunning, Converter={StaticResource InverseBool}}" />
+
+                <Button Content="Start" Command="{Binding StartCommand}" Margin="12,0,8,0" />
+                <Button Content="Stop"  Command="{Binding StopCommand}" />
+
+                <Separator Margin="12,0" />
+
+                <Label Content="Filter" />
+                <ComboBox Width="120" VerticalAlignment="Center"
+                          ItemsSource="{Binding ProviderFilters}"
+                          SelectedItem="{Binding SelectedProvider}" />
+                <Button Content="Clear" Command="{Binding ClearLogCommand}" Margin="12,0,0,0" />
+            </StackPanel>
+        </Border>
+
+        <!-- Settings (routes + upstream proxy) -->
+        <Border DockPanel.Dock="Top" Background="White" Padding="0"
+                BorderBrush="#E1E3E8" BorderThickness="0,0,0,1">
+            <Expander Header="Settings — Routes &amp; Upstream Proxy" IsExpanded="True" Padding="12,6">
+                <StackPanel Margin="4,8,4,4">
+
+                    <!-- Upstream proxy -->
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,10"
+                                IsEnabled="{Binding IsRunning, Converter={StaticResource InverseBool}}">
+                        <CheckBox Content="Route all traffic via upstream HTTP proxy"
+                                  VerticalAlignment="Center" IsChecked="{Binding UpstreamEnabled}" />
+                        <Label Content="Host" Margin="16,0,0,0" />
+                        <TextBox Width="160" VerticalContentAlignment="Center"
+                                 Text="{Binding UpstreamHost, UpdateSourceTrigger=PropertyChanged}" />
+                        <Label Content="Port" Margin="10,0,0,0" />
+                        <TextBox Width="64" VerticalContentAlignment="Center"
+                                 Text="{Binding UpstreamPort, UpdateSourceTrigger=PropertyChanged}" />
+                        <Label Content="User" Margin="10,0,0,0" />
+                        <TextBox Width="110" VerticalContentAlignment="Center"
+                                 Text="{Binding UpstreamUsername, UpdateSourceTrigger=PropertyChanged}" />
+                        <Label Content="Pass" Margin="10,0,0,0" />
+                        <TextBox Width="110" VerticalContentAlignment="Center"
+                                 Text="{Binding UpstreamPassword, UpdateSourceTrigger=PropertyChanged}" />
+                    </StackPanel>
+
+                    <!-- Routes header + buttons -->
+                    <DockPanel Margin="0,0,0,4">
+                        <TextBlock Text="Reverse-proxy routes  (base_url = http://127.0.0.1:port + PathPrefix  →  TargetBaseUrl)"
+                                   FontWeight="SemiBold" VerticalAlignment="Center" />
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" DockPanel.Dock="Right"
+                                    IsEnabled="{Binding IsRunning, Converter={StaticResource InverseBool}}">
+                            <Button Content="Add" Command="{Binding AddRouteCommand}" MinWidth="60" />
+                            <Button Content="Remove" Command="{Binding RemoveRouteCommand}" MinWidth="70" Margin="0" />
+                        </StackPanel>
+                    </DockPanel>
+
+                    <DataGrid ItemsSource="{Binding Routes}"
+                              SelectedItem="{Binding SelectedRoute}"
+                              AutoGenerateColumns="False"
+                              CanUserAddRows="False"
+                              HeadersVisibility="Column"
+                              Height="130"
+                              Background="White"
+                              GridLinesVisibility="All"
+                              HorizontalGridLinesBrush="#EDEEF1" VerticalGridLinesBrush="#EDEEF1"
+                              IsEnabled="{Binding IsRunning, Converter={StaticResource InverseBool}}">
+                        <DataGrid.Columns>
+                            <DataGridCheckBoxColumn Header="On" Binding="{Binding Enabled, UpdateSourceTrigger=PropertyChanged}" Width="40" />
+                            <DataGridTextColumn Header="Name" Binding="{Binding Name}" Width="140" />
+                            <DataGridTextColumn Header="Path Prefix" Binding="{Binding PathPrefix}" Width="160" />
+                            <DataGridTextColumn Header="Target Base URL" Binding="{Binding TargetBaseUrl}" Width="*" />
+                        </DataGrid.Columns>
+                    </DataGrid>
+
+                    <CheckBox Content="Only log AI requests (forward-proxy mode only)"
+                              Margin="0,8,0,0" IsChecked="{Binding OnlyLogAiRequests}"
+                              IsEnabled="{Binding IsRunning, Converter={StaticResource InverseBool}}" />
+                </StackPanel>
+            </Expander>
+        </Border>
+
+        <!-- Status bar -->
+        <Border DockPanel.Dock="Bottom" Background="#2B2F36" Padding="12,6">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <StackPanel Orientation="Horizontal" Grid.Column="0">
+                    <Ellipse Width="10" Height="10" VerticalAlignment="Center" Margin="0,0,8,0">
+                        <Ellipse.Style>
+                            <Style TargetType="Ellipse">
+                                <Setter Property="Fill" Value="#C0392B" />
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding IsRunning}" Value="True">
+                                        <Setter Property="Fill" Value="#2ECC71" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Ellipse.Style>
+                    </Ellipse>
+                    <TextBlock Text="{Binding StatusText}" Foreground="White" FontWeight="SemiBold" VerticalAlignment="Center" />
+                </StackPanel>
+                <TextBlock Grid.Column="1" Text="{Binding LastMessage}" Foreground="#B7BDC6"
+                           Margin="16,0,0,0" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" />
+            </Grid>
+        </Border>
+
+        <!-- Log grid -->
+        <DataGrid ItemsSource="{Binding LogView}"
+                  AutoGenerateColumns="False"
+                  IsReadOnly="True"
+                  CanUserAddRows="False"
+                  HeadersVisibility="Column"
+                  GridLinesVisibility="Horizontal"
+                  HorizontalGridLinesBrush="#EDEEF1"
+                  RowHeaderWidth="0"
+                  Background="White"
+                  BorderThickness="0"
+                  EnableRowVirtualization="True"
+                  VerticalScrollBarVisibility="Auto">
+            <DataGrid.Columns>
+                <DataGridTextColumn Header="Time" Binding="{Binding TimestampText}" Width="100" />
+                <DataGridTextColumn Header="Provider" Binding="{Binding Provider}" Width="90" />
+                <DataGridTextColumn Header="Method" Binding="{Binding Method}" Width="70" />
+                <DataGridTemplateColumn Header="Status" Width="70">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <TextBlock Text="{Binding StatusCode, Converter={StaticResource StatusText}}"
+                                       Foreground="{Binding StatusCode, Converter={StaticResource StatusBrush}}"
+                                       FontWeight="SemiBold" />
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+                <DataGridTextColumn Header="Latency" Binding="{Binding ElapsedMs, Converter={StaticResource Elapsed}}" Width="80" />
+                <DataGridTextColumn Header="Req" Binding="{Binding RequestSize, Converter={StaticResource Bytes}}" Width="72" />
+                <DataGridTextColumn Header="Resp" Binding="{Binding ResponseSize, Converter={StaticResource Bytes}}" Width="72" />
+                <DataGridTextColumn Header="URL" Binding="{Binding Url}" Width="*" />
+            </DataGrid.Columns>
+        </DataGrid>
+    </DockPanel>
+</Window>
