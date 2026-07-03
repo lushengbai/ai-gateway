@@ -3,6 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:ui="clr-namespace:AiGateway.UI"
         Title="AI API Gateway — Local Proxy (Reverse / Forward)"
+        Icon="/Resources/app.ico"
         Height="720" Width="1080"
         MinHeight="520" MinWidth="820"
         WindowStartupLocation="CenterScreen"

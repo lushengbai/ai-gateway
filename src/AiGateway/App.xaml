@@ -1,7 +1,8 @@
+<!-- No StartupUri: App.OnStartup creates the window and the tray icon so the app can
+     keep running in the background (window hidden) with only a tray presence. -->
 <Application x:Class="AiGateway.App"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             StartupUri="MainWindow.xaml">
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
     <Application.Resources>
     </Application.Resources>
 </Application>
